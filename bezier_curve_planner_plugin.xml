@@ -1,0 +1,5 @@
+<library path="bezier_curve_planner_plugin">
+	<class name="bezier_curve_planner/BezierCurvePlanner" type="bezier_curve_planner::BezierCurvePlanner" base_class_type="nav2_core::GlobalPlanner">
+	  <description>是一个自定义示例插件，用于生成自定义路径。</description>
+	</class>
+</library>
