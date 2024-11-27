@@ -100,7 +100,7 @@ bool bezier_curve_generator::generate_bezier_curve(const vector<double> &start,
     cout << "control point start: " << control_point_start[0] << " " << control_point_start[1] << endl;
     cout << "control point end: " << control_point_end[0] << " " << control_point_end[1] << endl;
     // step 3. generate path
-    path.push_back(vector<double>({start[0],start[1]}));
+    // path.push_back(vector<double>({start[0],start[1]}));
     double t = 0;
     double dt = 0.01;
     while(t<=1){
