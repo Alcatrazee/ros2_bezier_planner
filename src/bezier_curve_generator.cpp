@@ -119,7 +119,7 @@ bool bezier_curve_generator::generate_bezier_curve(const vector<double> &start,
                          end[0], end[1]
                          ,dx, dy);
         double speed = std::sqrt(dx * dx + dy * dy);
-        dt = 0.1 / speed; // 根据速度调整步长
+        dt = 0.05 / speed; // 根据速度调整步长
 
         t += dt;
     }

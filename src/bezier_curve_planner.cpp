@@ -95,7 +95,11 @@ namespace bezier_curve_planner
                 }else if(counter == vec_path.size()-1){
                     pose.pose.orientation = goal.pose.orientation;
                 }else{
-                    double yaw = atan2(vec_path[counter][1]-vec_path[counter-1][1],vec_path[counter][0]-vec_path[counter-1][0]);
+                    double yaw  = 0;
+                    if(dir == true)
+                       yaw = atan2(vec_path[counter][1]-vec_path[counter-1][1],vec_path[counter][0]-vec_path[counter-1][0]);
+                    else
+                       yaw = atan2(vec_path[counter-1][1]-vec_path[counter][1],vec_path[counter-1][0]-vec_path[counter][0]);
                     pose.pose.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0,0,1),yaw));
                 }
                 counter++;
