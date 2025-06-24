@@ -22,10 +22,10 @@ namespace bezier_curve_planner
         costmap_ = costmap_ros->getCostmap();
         global_frame_ = costmap_ros->getGlobalFrameID();
 
-        nav2_util::declare_parameter_if_not_declared(
-            node_, name_ + ".interpolation_resolution", rclcpp::ParameterValue(0.1));
-        node_->get_parameter(name_ + ".interpolation_resolution",
-                             interpolation_resolution_);
+        // nav2_util::declare_parameter_if_not_declared(
+        //     node_, name_ + ".interpolation_resolution", rclcpp::ParameterValue(0.1));
+        // node_->get_parameter(name_ + ".interpolation_resolution",
+        //                      interpolation_resolution_);
     }
 
     void BezierCurvePlanner::cleanup()
@@ -65,48 +65,50 @@ namespace bezier_curve_planner
         }
         // 3. get path
         cout << "generating path" << endl;
-        bezier_curve_generator bezier_generator_(bezier_curve_generator::RATIO,0.05);
-        double start_yaw = tf2::getYaw(start.pose.orientation);
-        double end_yaw = tf2::getYaw(goal.pose.orientation);
+        global_path.poses.push_back(start);
+        global_path.poses.push_back(goal);
+        // bezier_curve_generator bezier_generator_(bezier_curve_generator::RATIO,0.05);
+        // double start_yaw = tf2::getYaw(start.pose.orientation);
+        // double end_yaw = tf2::getYaw(goal.pose.orientation);
 
-        const vector<double> start_pose{start.pose.position.x, start.pose.position.y,start_yaw};
-        const vector<double> end_pose{goal.pose.position.x, goal.pose.position.y,end_yaw};
-        vector<vector<double>> vec_path;
+        // const vector<double> start_pose{start.pose.position.x, start.pose.position.y,start_yaw};
+        // const vector<double> end_pose{goal.pose.position.x, goal.pose.position.y,end_yaw};
+        // vector<vector<double>> vec_path;
 
-        bool dir = true;
-        double yaw_start_to_goal = atan2(end_pose[1]-start_pose[1],end_pose[0]-start_pose[0]);
-        double yaw_diff = std::remainder(yaw_start_to_goal-start_pose[2], 2.0 * M_PI);
-        if(abs(yaw_diff) > (M_PI/2))
-        {
-            dir = false;
-        }
-        cout << "yaw diff" << yaw_diff << endl;
+        // bool dir = true;
+        // double yaw_start_to_goal = atan2(end_pose[1]-start_pose[1],end_pose[0]-start_pose[0]);
+        // double yaw_diff = std::remainder(yaw_start_to_goal-start_pose[2], 2.0 * M_PI);
+        // if(abs(yaw_diff) > (M_PI/2))
+        // {
+        //     dir = false;
+        // }
+        // cout << "yaw diff" << yaw_diff << endl;
 
-        if(bezier_generator_.generate_bezier_curve(start_pose, end_pose, vec_path,dir)){
-            int counter = 0;
-            for(auto point : vec_path){
-                geometry_msgs::msg::PoseStamped pose;
-                pose.header.frame_id = global_frame_;
-                pose.header.stamp = node_->now();
-                pose.pose.position.x = point[0];
-                pose.pose.position.y = point[1];
-                if(counter == 0){
-                    pose.pose.orientation = start.pose.orientation;
-                }else if(counter == vec_path.size()-1){
-                    pose.pose.orientation = goal.pose.orientation;
-                }else{
-                    double yaw  = 0;
-                    if(dir == true)
-                       yaw = atan2(vec_path[counter][1]-vec_path[counter-1][1],vec_path[counter][0]-vec_path[counter-1][0]);
-                    else
-                       yaw = atan2(vec_path[counter-1][1]-vec_path[counter][1],vec_path[counter-1][0]-vec_path[counter][0]);
-                    pose.pose.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0,0,1),yaw));
-                }
-                counter++;
-                global_path.poses.push_back(pose);
-            }
-        }
-        cout << "generate done." << endl;
+        // if(bezier_generator_.generate_bezier_curve(start_pose, end_pose, vec_path,dir)){
+        //     int counter = 0;
+        //     for(auto point : vec_path){
+        //         geometry_msgs::msg::PoseStamped pose;
+        //         pose.header.frame_id = global_frame_;
+        //         pose.header.stamp = node_->now();
+        //         pose.pose.position.x = point[0];
+        //         pose.pose.position.y = point[1];
+        //         if(counter == 0){
+        //             pose.pose.orientation = start.pose.orientation;
+        //         }else if(counter == vec_path.size()-1){
+        //             pose.pose.orientation = goal.pose.orientation;
+        //         }else{
+        //             double yaw  = 0;
+        //             if(dir == true)
+        //                yaw = atan2(vec_path[counter][1]-vec_path[counter-1][1],vec_path[counter][0]-vec_path[counter-1][0]);
+        //             else
+        //                yaw = atan2(vec_path[counter-1][1]-vec_path[counter][1],vec_path[counter-1][0]-vec_path[counter][0]);
+        //             pose.pose.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0,0,1),yaw));
+        //         }
+        //         counter++;
+        //         global_path.poses.push_back(pose);
+        //     }
+        // }
+        // cout << "generate done." << endl;
 
 
         // 3.计算当前插值分辨率 interpolation_resolution_ 下的循环次数和步进值
@@ -139,19 +141,19 @@ namespace bezier_curve_planner
         // }
 
         // 5.使用 costmap 检查该条路径是否经过障碍物
-        for(auto pose : global_path.poses){
-            uint32_t mx,my;     // grid cell index
-            if(costmap_ ->worldToMap(pose.pose.position.x, pose.pose.position.y, mx, my)){
-                uint8_t cost = costmap_->getCost(mx, my);
-                if (cost == nav2_costmap_2d::LETHAL_OBSTACLE){
-                    RCLCPP_ERROR(node_->get_logger(), "规划器在(%lf,%lf)发现障碍物，无法完成路径规划",
-                        pose.pose.position.x, pose.pose.position.y);
-                    throw nav2_core::PlannerException(
-                        "unable to plan" + std::to_string(goal.pose.position.x) + "," +
-                        std::to_string(goal.pose.position.y));
-                }
-            }
-        }
+        // for(auto pose : global_path.poses){
+        //     uint32_t mx,my;     // grid cell index
+        //     if(costmap_ ->worldToMap(pose.pose.position.x, pose.pose.position.y, mx, my)){
+        //         uint8_t cost = costmap_->getCost(mx, my);
+        //         if (cost == nav2_costmap_2d::LETHAL_OBSTACLE){
+        //             RCLCPP_ERROR(node_->get_logger(), "规划器在(%lf,%lf)发现障碍物，无法完成路径规划",
+        //                 pose.pose.position.x, pose.pose.position.y);
+        //             throw nav2_core::PlannerException(
+        //                 "unable to plan" + std::to_string(goal.pose.position.x) + "," +
+        //                 std::to_string(goal.pose.position.y));
+        //         }
+        //     }
+        // }
 
         // 6.收尾，将目标点作为路径的最后一个点并返回路径
         // geometry_msgs::msg::PoseStamped goal_pose = goal;
