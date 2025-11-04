@@ -14,7 +14,7 @@ bezier_curve_generator::bezier_curve_generator(uint8_t control_point_mode,
     control_point_ratio_.push_back(0);
     set_control_point_distance(0.5,0.5);
     set_control_point_ratio(0.5,0.5);
-    set_interpolation_distance(0.05);
+    set_interpolation_distance(interpolation_distance_);
     std::cout << "bezier_curve_generator initialized" << std::endl;
 }
 
@@ -119,7 +119,7 @@ bool bezier_curve_generator::generate_bezier_curve(const vector<double> &start,
                          end[0], end[1]
                          ,dx, dy);
         double speed = std::sqrt(dx * dx + dy * dy);
-        dt = 0.05 / speed; // 根据速度调整步长
+        dt = interpolation_distance_ / speed; // 根据速度调整步长
 
         t += dt;
     }

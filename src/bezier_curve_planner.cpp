@@ -65,7 +65,7 @@ namespace bezier_curve_planner
         }
         // 3. get path
         cout << "generating path" << endl;
-        bezier_curve_generator bezier_generator_(bezier_curve_generator::RATIO,0.05);
+        bezier_curve_generator bezier_generator_(bezier_curve_generator::RATIO,interpolation_resolution_);
         double start_yaw = tf2::getYaw(start.pose.orientation);
         double end_yaw = tf2::getYaw(goal.pose.orientation);
 
